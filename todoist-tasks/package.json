@@ -1,0 +1,13 @@
+{
+  "name": "todoist-tasks",
+  "version": "1.0.0",
+  "description": "A project to fetch tasks due today from Todoist",
+  "main": "src/fetchTasksDueToday.js",
+  "scripts": {
+    "start": "node src/fetchTasksDueToday.js"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "moment": "^2.29.1"
+  }
+}

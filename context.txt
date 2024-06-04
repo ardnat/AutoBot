@@ -1,0 +1,13 @@
+{"date":2024-01-02 21:42:10.975697,"content":current goals 
+ }{"date":2024-01-02 21:42:13.041516,"content":current goals 
+ }{"date":2024-01-16 01:20:33.086348,"content":The user has greeted me. 
+ }{"date":2024-01-16 01:24:50.975442,"content":How is it going? 
+ }{"date":2024-01-16 01:24:59.394714,"content":How is it going? 
+ }{"date":2024-01-16 01:25:07.714754,"content":How is it going? 
+ }{"date":2024-01-20 01:31:24.980382,"content":hi, what is your name 
+ }{"date":2024-01-20 01:34:42.251176,"content":Dolphin's purpose is to help humans with tasks and provide accurate information. 
+ }{"date":2024-02-29 22:38:46.837157,"content":testt 
+ }{"date":2024-02-29 22:38:52.106695,"content":testt 
+ }{"date":2024-02-29 23:16:08.320464,"content":katie is funny 
+ }{"date":2024-02-29 23:20:24.121962,"content":{'text': 'katie is not funny'} 
+ }
