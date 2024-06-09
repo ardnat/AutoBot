@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "autobot"
+version = "0.1.0"
+description = ""
+authors = ["arda"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+langchain = "^0.2.2"
+tts = "^0.22.0"
+pydub = "^0.25.1"
+flask = "^3.0.3"
+flask-socketio = "^5.3.6"
+eventlet = "^0.36.1"
+webrtcvad = "^2.0.10"
+gunicorn = "^22.0.0"
+pyogg = "^0.6.14a1"
+opuslib = "^3.0.1"
+pip = "^24.0"
+pyannote-audio = "^3.2.0"
+transformers = "^4.41.2"
+whisper-ctranslate2 = "^0.4.4"
+faster-whisper = "^1.0.2"
+
+[tool.poetry.group.dev.dependencies]
+pydub = "^0.25.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

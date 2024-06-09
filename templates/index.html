@@ -1,0 +1,100 @@
+<body>
+    <button onclick="startStreaming()">Start Streaming</button>
+    <audio id="audio" autoplay></audio>
+    <script src="https://cdn.jsdelivr.net/npm/hark@1.2.3/hark.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+    <script src="https://cdn.webrtc-experiment.com/MediaStreamRecorder.js"></script>
+    <script>
+        var socket = io();
+       
+        var mediaRecorder;
+        var mediaConstraints = {
+            audio: true
+        };
+        let timer;
+        var ignoreRecording = true;
+        function startTimer() {
+            // Clear any existing timer
+            if (timer) {
+                clearInterval(timer);
+            }
+
+            // Reset seconds
+            seconds = 0;
+
+            // Start the timer
+            timer = setInterval(function() {
+                seconds++;
+                console.log(seconds);
+            }, 1000);
+        }
+
+        navigator.getUserMedia(mediaConstraints, onMediaSuccess, onMediaError);
+
+        function onMediaSuccess(stream) {
+            mediaRecorder = new MediaStreamRecorder(stream);
+            mediaRecorder.mimeType = 'audio/wav'; // check this line for audio/wav
+            mediaRecorder.audioChannels = 1;
+
+            var speechEvents = hark(stream, {});
+            speechEvents.on('speaking', function() {
+                ignoreRecording = false;
+                console.log('speaking');
+                socket.emit('startspeaking', "");
+                if (timer) {
+                    clearInterval(timer);
+                }
+            });
+            speechEvents.on('stopped_speaking', function() {
+                ignoreRecording = true;
+                console.log('stopped speaking');
+                socket.emit('stopspeaking', "");
+                startTimer();
+            });
+
+            mediaRecorder.ondataavailable = function (blob) {
+                console.log("data available");
+                if (!ignoreRecording) {
+                   
+                console.log("streaming");
+                var reader = new FileReader();
+                reader.onloadend = function() {
+                    var arrayBuffer = reader.result;
+                    console.log("Send user audio to server");
+                    socket.emit('audio', arrayBuffer);
+
+                }
+                reader.readAsArrayBuffer(blob);
+            };
+            
+             }
+    
+            mediaRecorder.start(3000);
+        }
+
+        function onMediaError(e) {
+            console.error('media error', e);
+        }
+
+        socket.on('audioPlay', function(data) {
+            var audio = document.getElementById('audio');
+            console.log("####################");
+            console.log("Received audio from server");
+            var blob = new Blob([data], { 'type' : 'audio/wav' });
+            var audioURL = window.URL.createObjectURL(blob);
+            audio.src = audioURL;
+             // emit to server that audio has been played
+             audio.onended = function() {
+                console.log("Audio has ended");
+                mediaRecorder.resume();
+                socket.emit('playServerAudioEnd', "");
+            }
+            socket.emit('playServerAudioStart', "");
+            mediaRecorder.pause();
+            audio.play();
+           
+          
+        });
+    </script>
+</body>

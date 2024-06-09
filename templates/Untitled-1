@@ -1,0 +1,14 @@
+ // Assuming `blob` is your Blob object
+        var reader = new FileReader();
+        reader.onload = function() {
+            // var a = document.createElement('a');
+            // a.href = reader.result;
+            
+           
+            // a.download = 'audio.wav';
+            // document.body.appendChild(a);
+            // a.click();
+            // document.body.removeChild(a);
+        }
+        reader.readAsDataURL(blob);
+                        console.log(blob);
