@@ -24,8 +24,7 @@ from TTS.api import TTS
 
 # Get device
 device = "cuda" if torch.cuda.is_available() else "cpu"
- # Init TTS
-tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
+
 
 (get_speech_timestamps,
  save_audio,
@@ -76,52 +75,60 @@ def handle_audio(data):
     print('Received audio data')
     global audio_buffer
     data = bytes(data)
+    with tempfile.NamedTemporaryFile(suffix=".webm", delete=True) as tempinput:
+        tempinput.write(data)
+        tempinput.flush()
 
-    audio_buffer.write(data)
-    if audio_buffer.tell() > 0:
-        # Seek to the start of the BytesIO object before reading it
-        audio_buffer.seek(0)
-        # Convert the BytesIO object to bytes and create a wave file object
-        wave_file = wave.open(audio_buffer, 'rb')
-        # Read the audio data
-        audio_data = wave_file.readframes(wave_file.getnframes())
-        # Save the audio data to a temporary file
-        with tempfile.NamedTemporaryFile(delete=True) as temp:
-            temp.write(data)
-            temp.flush()
-            # # Read the sampling rate of the audio data
-            # SAMPLING_RATE = 16000
-            # # Use the Silero VAD to check if the audio data contains speech
-            # wav = read_audio(temp.name,sampling_rate=SAMPLING_RATE)
-            # speech_timestamps = get_speech_timestamps(wav, model, sampling_rate=SAMPLING_RATE)
-            # print(speech_timestamps)
-            # # Run poetry run whisper-ctranslate2 --live_transcribe True --language en --speaker_name SPEAKER --hf_token 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 to transcribe the audio data
-            # # If the audio data contains speech, transcribe it
-            # if speech_timestamps:
-            print('Speech detected')
-            
+        # Convert WebM to WAV using pydub
+        audio = AudioSegment.from_file(tempinput.name,"webm")
+        wav_data = audio.export(format="wav")
+        audio_buffer.write(wav_data)
+        if audio_buffer.tell() > 0:
+            # Seek to the start of the BytesIO object before reading it
+            audio_buffer.seek(0)
+            # Convert the BytesIO object to bytes and create a wave file object
+            wave_file = wave.open(audio_buffer, 'rb')
+            # Read the audio data
+            audio_data = wave_file.readframes(wave_file.getnframes())
             # Save the audio data to a temporary file
-            
-            segments, info = model.transcribe(temp.name, beam_size=5, language="en", condition_on_previous_text=False,vad_filter=True,vad_parameters={"threshold": .3})
+            with tempfile.NamedTemporaryFile(delete=True) as temp:
+                temp.write(data)
+                temp.flush()
+                # # Read the sampling rate of the audio data
+                # SAMPLING_RATE = 16000
+                # # Use the Silero VAD to check if the audio data contains speech
+                # wav = read_audio(temp.name,sampling_rate=SAMPLING_RATE)
+                # speech_timestamps = get_speech_timestamps(wav, model, sampling_rate=SAMPLING_RATE)
+                # print(speech_timestamps)
+                # # Run poetry run whisper-ctranslate2 --live_transcribe True --language en --speaker_name SPEAKER --hf_token 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 to transcribe the audio data
+                # # If the audio data contains speech, transcribe it
+                # if speech_timestamps:
+                print('Speech detected')
+                
+                # Save the audio data to a temporary file
+                
+                segments, info = model.transcribe(temp.name, beam_size=5, language="en", condition_on_previous_text=False,vad_filter=True,vad_parameters={"threshold": .3})
+                print(info)
+                for segment in segments:
+                    print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
+                    # Init TTS
+                    tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
+                    render_tts("Dude, you sounds all like "+segment.text,temp.name)
+                    with open("tts.wav", "rb") as f2:
+                        emit('audioPlay', f2.read())
 
-            for segment in segments:
-                print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
-                render_tts("Dude, you sounds all like "+segment.text,temp.name)
-                with open("tts.wav", "rb") as f2:
-                    emit('audioPlay', f2.read())
-
-                # with open('useroutput.wav', 'wb') as sf:
-                #     sf.write(data)
-                #     sf.flush()
-                #     # Run poetry run whisper
-                #     command = ["whisper-ctranslate2", sf.name, "--language", "en","--device","cuda", "--speaker_name", "SPEAKER", "--hf_token", "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", "--verbose", "True"]
-                #     subprocess.run(command, check=True, stdout=subprocess.PIPE)
-                #     # Read and print the content of sample.txt
-                #     with open(f'useroutput.txt', 'r') as f:
-                #         print(f.read())
-                        # with open("useroutput.wav", "rb") as f2:
-                        # emit('audio', f2.read())
-                    # emit('audio', data)
+                    # with open('useroutput.wav', 'wb') as sf:
+                    #     sf.write(data)
+                    #     sf.flush()
+                    #     # Run poetry run whisper
+                    #     command = ["whisper-ctranslate2", sf.name, "--language", "en","--device","cuda", "--speaker_name", "SPEAKER", "--hf_token", "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", "--verbose", "True"]
+                    #     subprocess.run(command, check=True, stdout=subprocess.PIPE)
+                    #     # Read and print the content of sample.txt
+                    #     with open(f'useroutput.txt', 'r') as f:
+                    #         print(f.read())
+                            # with open("useroutput.wav", "rb") as f2:
+                            # emit('audio', f2.read())
+                        # emit('audio', data)
                     
 
 def render_tts(text,voice="Luminary.mp3"):

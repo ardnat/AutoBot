@@ -4,7 +4,10 @@
     <script src="https://cdn.jsdelivr.net/npm/hark@1.2.3/hark.bundle.min.js"></script>
     <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
     <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-    <script src="https://cdn.webrtc-experiment.com/MediaStreamRecorder.js"></script>
+    <script src="https://higuma.github.io/web-audio-recorder-js/js/WebAudioRecorder.min.js"></script>
+    <script>
+    </script>
+  
     <script>
         var socket = io();
        
@@ -27,15 +30,22 @@
             timer = setInterval(function() {
                 seconds++;
                 console.log(seconds);
+                socket.emit('stopspeaking', "");
+                mediaRecorder.finishRecording();
+                clearInterval(timer);
             }, 1000);
         }
 
         navigator.getUserMedia(mediaConstraints, onMediaSuccess, onMediaError);
 
         function onMediaSuccess(stream) {
-            mediaRecorder = new MediaStreamRecorder(stream);
-            mediaRecorder.mimeType = 'audio/wav'; // check this line for audio/wav
-            mediaRecorder.audioChannels = 1;
+            mixer = audioContext.createGain();
+            mediaRecorder = new WebAudioRecorder(stream, {
+            workerDir: "javascripts/"     // must end with slash
+            });
+            recorder.setEncoding("wav")
+            //mediaRecorder.mimeType = 'audio/wav'; // check this line for audio/wav
+            //ediaRecorder.audioChannels = 1;
 
             var speechEvents = hark(stream, {});
             speechEvents.on('speaking', function() {
@@ -45,32 +55,35 @@
                 if (timer) {
                     clearInterval(timer);
                 }
+                recorder.startRecording()
             });
             speechEvents.on('stopped_speaking', function() {
                 ignoreRecording = true;
                 console.log('stopped speaking');
-                socket.emit('stopspeaking', "");
+                mediaRecorder.requestData();
+
+                socket.emit('CLIENTstopspeaking', "");
                 startTimer();
             });
 
-            mediaRecorder.ondataavailable = function (blob) {
+            mediaRecorder.onComplete = function (recorder, blob) {
                 console.log("data available");
-                if (!ignoreRecording) {
+                
                    
-                console.log("streaming");
+               
                 var reader = new FileReader();
                 reader.onloadend = function() {
+                    console.log(reader)
                     var arrayBuffer = reader.result;
                     console.log("Send user audio to server");
                     socket.emit('audio', arrayBuffer);
-
-                }
-                reader.readAsArrayBuffer(blob);
+                    
+             
             };
-            
+            reader.readAsArrayBuffer( blob.data );
              }
     
-            mediaRecorder.start(3000);
+            mediaRecorder.startRecording();
         }
 
         function onMediaError(e) {
@@ -87,11 +100,11 @@
              // emit to server that audio has been played
              audio.onended = function() {
                 console.log("Audio has ended");
-                mediaRecorder.resume();
+               // mediaRecorder.resume();
                 socket.emit('playServerAudioEnd', "");
             }
             socket.emit('playServerAudioStart', "");
-            mediaRecorder.pause();
+            //mediaRecorder.pause();
             audio.play();
            
           
