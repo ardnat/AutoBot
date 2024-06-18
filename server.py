@@ -16,14 +16,30 @@ import torchaudio
 
 import tempfile
 import subprocess
+from langchain.llms.ollama import Ollama
 
 device = torch.device('cpu')  # gpu also can be used
 model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad', model='silero_vad', force_reload=True)
 import torch
 from TTS.api import TTS
+import os
+os.environ["OPENAI_API_KEY"] = "abcd"
+os.environ["OPENAI_API_BASE"] = "http://192.168.50.207:11434/"
+chat_model = Ollama(
 
+    #model="gpt-4-1106-preview",
+    # #set base url for local
+    # openai_api_base="http://192.168.50.207:11434/",#
+    # openai_api_key="sk-1234",
+    model="llama3:70b-instruct-q5_K_M",
+    temperature=1,
+    #max_tokens=8000,
+ 
+    #default_query={"test": "test"},
+)
 # Get device
 device = "cuda" if torch.cuda.is_available() else "cpu"
+print(TTS().list_models().list_models())
  # Init TTS
 tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
 
@@ -106,8 +122,13 @@ def handle_audio(data):
 
             for segment in segments:
                 print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
-                render_tts("Dude, you sounds all like "+segment.text,temp.name)
+                res=chat_model.generate(prompts=[segment.text])
+                print(res)
+                res=res.generations[0][0].text
+                print(res)
+                render_tts(res,temp.name)
                 with open("tts.wav", "rb") as f2:
+                    print("sent audio to client")
                     emit('audioPlay', f2.read())
 
                 # with open('useroutput.wav', 'wb') as sf:

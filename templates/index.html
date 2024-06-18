@@ -50,6 +50,7 @@
                 ignoreRecording = true;
                 console.log('stopped speaking');
                 socket.emit('stopspeaking', "");
+                print(mediaRecorder.blobs)
                 startTimer();
             });
 
